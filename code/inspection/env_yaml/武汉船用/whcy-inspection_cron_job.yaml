@@ -1,0 +1,67 @@
+apiVersion: batch/v1beta1 #batch/v2alpha1
+kind: CronJob
+metadata:
+  name: inspectionjob
+spec:
+  schedule: "*/1 * * * *" # 分钟，小时，日，月，星期
+  startingDeadlineSeconds: 300 # 300秒没有启动成功，就不再启动
+  concurrencyPolicy: Forbid #Allow 允许job并发执行，Forbid只允许当前这个执行，Replace取消当前这个，而执行新的
+  suspend: false # 设置为true，后续所有执行被挂起
+  jobTemplate:
+    spec:
+      ttlSecondsAfterFinished: 100 # 任务完成后的10s之后自动删除pod，k8s 1.12以后才有
+      backoffLimit: 5 # 最大允许失败的次数
+      template:
+        spec:
+          nodeSelector:
+            kubernetes.io/hostname: node01
+          restartPolicy: OnFailure
+          volumes:
+            - name: inspection-log
+              hostPath:
+                path: /tmp/patrol.log
+            - name: dshm
+              emptyDir:
+                medium: Memory
+            - name: disk-info-json
+              hostPath:
+                path: /root/inspection/disk_info.json
+            - name: disk-info-sqlitedb
+              hostPath:
+                path: /root/inspection/disk-sqlite.db                
+          containers:
+            - name: inspection-job
+              image: test6:latest
+              imagePullPolicy: IfNotPresent
+              volumeMounts:
+                - name: inspection-log
+                  mountPath: /tmp/patrol.log
+                - name: dshm
+                  mountPath: /dev/shm
+                - name: disk-info-json
+                  mountPath: /root/inspection/disk_info.json
+                - name: disk-info-sqlitedb
+                  mountPath: /root/inspection/disk-sqlite.db                  
+              env:
+               - name: INSPECTION_DOMAIN # 当前环境的域名后缀
+                 value: wmmp.com.cn
+               - name: INSPECTION_USERNAME # 访问根云平台页面的用户名
+                 value: AcceptTest
+               - name: INSPECTION_PASSWORD # 访问根云平台页面的密码
+                 value: Sghl@2021
+               - name: PLATFORM_ENV_NAME # 环境平台名称,例如 新天钢，长城汽车
+                 value: 武汉船用
+               - name: QIWEI_URL # 企业微信机器人URL
+                 value: https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=5053c60e-03bf-4038-ba4f-76b14dde90b1
+               - name: GRAFANA_USERNAME
+                 value: admin
+               - name: GRAFANA_PASSWORD
+                 value: strongpassword
+               - name: GRAFANA_KAFKA_LAG_DETAIL_URL
+                 value: http://grafana.wmmp.com.cn/d/KZooFzuWk/gong-kuang-shang-chuan-jian-kong-dashboard?orgId=1&fullscreen&panelId=108&kiosk=tv&to=now&from=now-
+               - name: LAST_TIME
+                 value: 30m
+               - name: ISSEND
+                 value: "0"
+               - name: INSPECTION_ROOTCLOUD_THING_INSTANCE_URL
+                 value: http://console-ui.wmmp.com.cn/frame-cms/device/v2-thing-instance

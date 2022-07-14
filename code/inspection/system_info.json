@@ -1,0 +1,12 @@
+{
+   "cpuinfo": 8,
+   "memoryinfo": 60,
+   "diskused": 30,
+   "diskonhost": "10.10.3.3",
+   "diskmount": "/",
+   "restartpods": "",
+   "unreadypods":  "",
+   "unrunningpods": "",
+   "servertimestatus": true
+}
+

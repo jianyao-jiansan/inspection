@@ -1,0 +1,1 @@
+0 9,18 * * * sh -x /root/system_info.sh > /tmp/run.log
